@@ -1,4 +1,5 @@
 node_modules/
-uploads/
-outputs/
-.env
+uploads/*
+!uploads/.gitkeep
+output/*
+!output/.gitkeep

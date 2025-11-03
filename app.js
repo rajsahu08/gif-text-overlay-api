@@ -10,13 +10,6 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Ensure uploads and outputs directories exist
-['uploads', 'outputs'].forEach(dir => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
-    }
-});
-
 // Serve static files from 'outputs' folder
 app.use('/outputs', express.static(path.join(__dirname, 'outputs')));
 
