@@ -19,6 +19,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+app.get('/overlay', (req, res) => {
+    res.send("Test on Postman");
+});
+
 //api endpoint
 app.post('/overlay', upload.single('gif'), async (req, res) => {
     if (!req.file) {
