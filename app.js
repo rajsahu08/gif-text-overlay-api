@@ -10,17 +10,16 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Serve static files from 'outputs' folder
 app.use('/outputs', express.static(path.join(__dirname, 'outputs')));
 
-// Multer config for file uploads (store in 'uploads' folder)
+//multer configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, 'uploads/'),
     filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
 const upload = multer({ storage });
 
-// POST endpoint: /overlay
+//api endpoint
 app.post('/overlay', upload.single('gif'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No GIF file uploaded' });
@@ -37,7 +36,7 @@ app.post('/overlay', upload.single('gif'), async (req, res) => {
     const outputPath = path.join(__dirname, 'outputs', outputFilename);
 
     try {
-        // Extract all frames from the input GIF (cumulative for full frames)
+        // Extracting all frames from input GIF 
         const frameData = await gifFrames({
             url: inputPath,
             frames: 'all',
@@ -51,8 +50,8 @@ app.post('/overlay', upload.single('gif'), async (req, res) => {
         // Set up GIF encoder
         const encoder = new GIFEncoder(width, height);
         encoder.start();
-        encoder.setRepeat(0); // Infinite loop
-        encoder.setQuality(50); // Balance quality and size
+        encoder.setRepeat(0);
+        encoder.setQuality(50);
 
         for (const frame of frameData) {
             // Get frame as buffer
@@ -65,7 +64,7 @@ app.post('/overlay', upload.single('gif'), async (req, res) => {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(image, 0, 0);
 
-            // Add rotated text
+            // Adding rotated text here
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(angle * Math.PI / 180);
@@ -76,31 +75,26 @@ app.post('/overlay', upload.single('gif'), async (req, res) => {
             ctx.fillText(text, 0, 0);
             ctx.restore();
 
-            // Add frame to encoder with original delay
-            encoder.setDelay(frame.frameInfo.delay * 10); // Convert to ms
+            // Adding frame to encoder with original delay
+            encoder.setDelay(frame.frameInfo.delay * 10); //Converting to ms
             encoder.addFrame(ctx);
         }
 
         encoder.finish();
         const outputBuffer = encoder.out.getData();
 
-        // Write output GIF
         fs.writeFileSync(outputPath, outputBuffer);
-
-        // Clean up input file
         fs.unlinkSync(inputPath);
 
-        // Return link with dynamic host
         const host = process.env.RENDER_EXTERNAL_URL || `http://localhost:${port}`;
         const link = `${host}/outputs/${outputFilename}`;
-        res.json({ link });
+        res.json({ outputUrl: link });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to process GIF' });
     }
 });
 
-// Helper to convert stream to buffer
 function streamToBuffer(stream) {
     return new Promise((resolve, reject) => {
         const chunks = [];
